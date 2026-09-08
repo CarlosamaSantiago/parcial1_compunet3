@@ -91,10 +91,13 @@ class StudentController {
         try {
             const email = request.params.email;
             if (typeof email !== "string") {
-                response.status(400).json({ message: "Pon un email valido" });
+                response.status(400).json({ message: "Please write a valid String" });
                 return;
             }
-            const students = await studentService.findByEmail(email);
+            const students = await studentService.deleteStudent(email);
+            if (students==null){
+                response.status(400).json({ message: `User ${email} not found` });
+            }
             response.json(students);
         } catch (error) {
             response.json(error);
