@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { StudentDocument, StudentInput } from "../models/student.model";
+import { StudentDocument, StudentInput, StudentSearchQuery } from "../models/student.model";
 import { studentService } from "../services/student.service";
 
 class StudentController {
@@ -77,12 +77,28 @@ class StudentController {
 
     // TODO (Reto 2 - Search): tomar los query params y delegar en studentService.search
     async search(request: Request, response: Response) {
-        response.status(501).json({ message: "Not implemented" });
+        try {
+            const query = request.query as StudentSearchQuery;
+            const students = await studentService.search(query);
+            response.status(200).json(students);
+        } catch (error) {
+            response.status(500).json(error);
+        }
     }
 
     // TODO (Reto 3 - Delete): validar el email y delegar en studentService.deleteStudent (404/mensaje si no existe)
     async deleteStudent(request: Request, response: Response) {
-        response.status(501).json({ message: "Not implemented" });
+        try {
+            const email = request.params.email;
+            if (typeof email !== "string") {
+                response.status(400).json({ message: "Pon un email valido" });
+                return;
+            }
+            const students = await studentService.findByEmail(email);
+            response.json(students);
+        } catch (error) {
+            response.json(error);
+        }
     }
 }
 
