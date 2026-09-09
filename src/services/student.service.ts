@@ -52,57 +52,79 @@ class StudentService {
 
         // Array donde guardaremos los emails de los estudiantes
         // que sí fueron creados.
-        const created: string[] = [];
+        const created: StudentDocument[] = [];
 
         // Array donde guardaremos los emails que 
         // fueron omitidos en su creación.
         const skipped: { email: string; reason: string }[] = [];
 
-        for (const stu in studentsData) {
+        for (const stu of studentsData) {
 
-            const studentInput = await this.findByEmail(stu);
+            const studentInput = await this.findByEmail(stu.email);
 
             // Si findByEmail encontró un estudiante,
             // se pone en skipped.
             if (studentInput != null) {
-                
 
-                const skipped_email= {
-                    email=stu.email,
-                    reason= "email already exists"
+                let email: string = studentInput.email;
+                let reason: string = "email already exists";
+                const skipped_email: { email: string; reason: string } = {
+                    email: email,
+                    reason: reason
                 };
-                
-                skipped.push(new {email:stu.email, });
+
+                skipped.push(skipped_email);
 
             } else {
 
-                // Si no encontramos ningún estudiante con ese email,
-                // lo agregamos al arreglo notFound.
-                notFound.push(stu);
+                const createdStu = await StudentModel.create(stu as StudentDocument);
+                created.push(createdStu);
+
             }
         }
 
-        // Retornamos un objeto que cumple con la estructura
-        // definida por BulkToggleResult.
-        //
-        // No necesitamos hacer:
-        // new Promise(...)
-        //
-        // porque la función ya está declarada como "async".
-        // TypeScript/JavaScript automáticamente convierte este
-        // objeto en una Promise<BulkToggleResult>.
         return {
-            updated,
-            notFound
+            created,
+            skipped
         };
+
+
     }
 
     // TODO (Reto 2 - Search): implementar.
     // Construye un filtro de Mongoose SOLO con los criterios presentes en el query (los ausentes no deben filtrar nada).
     // isActive: "true"/"false" -> boolean | minAge/maxAge -> rango con $gte/$lte sobre "age" | name -> coincidencia parcial case-insensitive con $regex
     async search(query: StudentSearchQuery): Promise<StudentDocument[]> {
-        throw new Error("Not implemented");
+        try {
+            const filter: any = {};
+
+
+            if (query.isActive !== undefined) {
+
+                filter.isActive = query.isActive === "true";
+            }
+
+            if (query.name) {
+
+                filter.name = {
+                    $regex: query.name,
+                    $options: "i"
+                };
+            }
+
+
+
+            // Buscamos todos los estudiantes que cumplan el filtro.
+            const students = await StudentModel.find(filter);
+
+            return students;
+
+        } catch (error) {
+            console.log(this.handleError(error));
+            throw error;
+        }
     }
+
 
     // TODO (Reto 3 - Delete): implementar.
     // Debe eliminar el estudiante con ese email y devolver el documento eliminado, o null si no existía.
