@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { BulkCreateResult, StudentDocument, StudentInput, StudentModel, StudentSearchQuery } from "../models/student.model";
 
 class StudentService {
@@ -104,6 +105,13 @@ class StudentService {
                 filter.isActive = query.isActive === "true";
             }
 
+            if (query.minAge || query.maxAge) {
+                filter.age = {
+                    $gt: query.minAge,
+                    $lt: query.maxAge
+                }
+            }
+
             if (query.name) {
 
                 filter.name = {
@@ -111,8 +119,6 @@ class StudentService {
                     $options: "i"
                 };
             }
-
-
 
             // Buscamos todos los estudiantes que cumplan el filtro.
             const students = await StudentModel.find(filter);
@@ -129,7 +135,13 @@ class StudentService {
     // TODO (Reto 3 - Delete): implementar.
     // Debe eliminar el estudiante con ese email y devolver el documento eliminado, o null si no existía.
     async deleteStudent(email: string): Promise<StudentDocument | null> {
-        throw new Error("Not implemented");
+        try {
+            
+            return await StudentModel.deleteOne(this.findByEmail(email)) as mongoose.Document{};
+
+        } catch (error) {
+           return error;
+        }
     }
 
     handleError(error: any) {
